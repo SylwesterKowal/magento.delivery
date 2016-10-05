@@ -1,0 +1,24 @@
+{
+  "name": "sylwesterkowal/magento.delivery",
+  "description": "Magento Plugin for Delivery Integrations",
+  "keywords": ["magento","delivery","plugin","GLS","DPD","DHL"],
+  "homepage": "https://github.com/SylwesterKowal/magento.delivery",
+  "type": "magento-plugin",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sylwester Kowal",
+      "email": "sylwester.kowal@21w.pl"
+    }
+  ],
+  "require": {
+    "php": ">=5.4.16",
+    "magento/magento": "~1.6"
+  },
+  "autoload": {
+    "psr-4": {
+      "Slug\\": "app"
+    }
+  },
+  "minimum-stability": "stable"
+}
