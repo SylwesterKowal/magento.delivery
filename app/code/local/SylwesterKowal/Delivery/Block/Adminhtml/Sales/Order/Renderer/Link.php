@@ -7,8 +7,8 @@ class SylwesterKowal_Delivery_Block_Adminhtml_Sales_Order_Renderer_Link extends 
         $html = '';
         $row->setClass('a-center');
         $delivery_link = Mage::helper('adminhtml')->__('Send');
-        $url = Mage::helper("adminhtml")->getUrl("admin_delivery/adminhtml_deliverybackend/send/", array("orderId" => $row->getData('increment_id')));
-        $html = '<a href="' . $url . '" >' . $delivery_link . '</a>';
+        $url = Mage::helper("adminhtml")->getUrl("admin_delivery/adminhtml_deliverybackend/create/", array("orderId" => $row->getData('increment_id')));
+        $html = '<a target="blank" href="' . $url . '" >' . $delivery_link . '</a>';
         return $html;
     }
 
