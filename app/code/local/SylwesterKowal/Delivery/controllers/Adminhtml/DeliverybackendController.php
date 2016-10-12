@@ -50,6 +50,54 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
         }
     }
 
+    private function getOrderItems()
+    {
+        try {
+            $items = Mage::getResourceModel('sales/order_item_collection')->setOrderFilter($this->order->getID());
+
+
+            $products = [];
+            $total_weight = 0;
+
+            foreach ($items as $item) {
+                $product = [];
+                $_product = Mage::getModel('catalog/product')->setStoreId(Mage_Core_Model_App::ADMIN_STORE_ID)->load($item->getProductId());
+
+//				Zend_Debug::dump($item);
+
+                $options = unserialize($item->getData('product_options'));
+                $_options = '';
+                if (isset($options['options']) && is_array($options['options'])) {
+                    foreach ($options['options'] as $opt) {
+                        $_options .= $opt['label'] . ': ' . $opt['value'] . PHP_EOL;
+                    }
+                }
+//                $product["ID"] = $item->getProductId(); // Product ID
+                $product["SK"] = $_product->getData('sku'); // Product SKU
+                $product["NA"] = $_product->getData('name'); // Product Name
+                $product["QT"] = (int)$item->getQtyOrdered(); // Product Quantity
+//                $product["PR"] = (float) $item->getPrice(); // Product Price Netto
+//                $product["PIT"] = (float) $item->getPriceInclTax(); // Product Price Brutto
+//                $product["RN"] = (float) $item->getRowTotal(); // Product Total Netto
+//                $product["RB"] = (float) $item->getRowTotalInclTax(); // Product Total Brutto
+//                $product["VA"] = (float) $item->getTaxAmount(); // Product Vat
+//                $product["TX"] = (float) $item->getTaxPercent(); // Product Tax %
+//                $product["WE"] = (float) $item->getWeight(); // Product Weight
+                $product["WT"] = (float)$item->getWeight() * $item->getQtyOrdered(); // Product Total Weight
+                $total_weight = $total_weight + $product["WT"];
+//                $product["OP"] = $_options;
+
+                $products['items'] = $product;
+                $products['total_weight'] = $total_weight;
+
+            }
+            return $products;
+        } catch (Exception $e) {
+            Mage::log('Błąd odczytu produktów z zamówienia ' . $e->getMessage() . '<br/>', null, $this->logFilenameErrors);
+        }
+
+    }
+
     private function init()
     {
         $this->host = $this->getHost();
@@ -65,20 +113,26 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
     private function getData()
     {
         $data = array();
-        $data['ORDER_ID'] = $this->order->getIncrementId();
-        $data['ODB_NAZWA'] = $this->order->getShippingAddress()->getCompany() . ' ' . $this->order->getShippingAddress()->getFirstname() . ' ' . $this->order->getShippingAddress()->getLastname();
-        $data['ODB_NAZWA'] = trim($data['ODB_NAZWA']);
-        $data['ODB_NAZWA'] = substr($data['ODB_NAZWA'], 0, 60);
-        $data['ODB_KRAJ'] = $this->order->getShippingAddress()->getCountryId();
-        $data['ODB_MIEJSCOWOSC'] = $this->order->getShippingAddress()->getCity();
-        $data['ODB_KOD_POCZTOWY'] = $this->order->getShippingAddress()->getPostcode();
-        $data['ODB_ULICA'] = $this->order->getShippingAddress()->getStreetFull();
-        $data['ODB_TELEFON'] = $this->order->getShippingAddress()->getTelephone();
-        $data['ODB_EMAIL'] = $this->order->getCustomerEmail();
-        $data['SET_HOST'] = $this->host;
-        $data['SET_CODE'] = Mage::getStoreConfig('deliverysection/settings/code');
-        $data['SET_USERNAME'] = Mage::getStoreConfig('deliverysection/settings/username');
-        $data['SET_PASSWORD'] = Mage::getStoreConfig('deliverysection/settings/password');
+        $data['ID'] = $this->order->getIncrementId();
+        $data['NA'] = $this->order->getShippingAddress()->getCompany() . ' ' . $this->order->getShippingAddress()->getFirstname() . ' ' . $this->order->getShippingAddress()->getLastname();
+        $data['NA'] = trim($data['NA']);
+        $data['NA'] = substr($data['NA'], 0, 60);
+        $data['CO'] = $this->order->getShippingAddress()->getCountryId();
+        $data['CI'] = $this->order->getShippingAddress()->getCity();
+        $data['ZI'] = $this->order->getShippingAddress()->getPostcode();
+        $data['ST'] = $this->order->getShippingAddress()->getStreetFull();
+        $data['TE'] = $this->order->getShippingAddress()->getTelephone();
+        $email = (!empty($this->order->getShippingAddress()->getEmail())) ? $this->order->getShippingAddress()->getEmail() : $this->order->getBillingAddress()->getEmail();
+        $data['EM'] = (!empty($email)) ? $email : $this->order->getCustomerEmail();
+        $orderItems = $this->getOrderItems();
+        $data['IT'] = $orderItems['items'];
+        $data['VA'] = (float)$this->order->getGrandTotal();
+        $data['TW'] = (float)$orderItems['total_weight'];
+        $data['PE'] = $this->order->getPayment()->getMethodInstance()->getCode(); // kod płatności z zamówienia
+
+        $data['HO'] = $this->host;
+        $data['CD'] = Mage::getStoreConfig('deliverysection/settings/code');
+        $data['ME'] = $this->getActivPaymentMethods(); // lista aktywnych metod płatności
         return $data;
     }
 
@@ -94,8 +148,7 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
 
     private function encoding()
     {
-        $code = Mage::getStoreConfig('deliverysection/settings/code');
-        $key = md5($code, true);
+        $key = md5(crc32($this->host), true);
         $plaintext = serialize($this->order_data);
         $iv_size = mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC);
         $iv = mcrypt_create_iv($iv_size, MCRYPT_RAND);
@@ -104,5 +157,19 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
         $ciphertext_base64 = base64_encode($ciphertext);
 
         return $ciphertext_base64;
+    }
+
+    private function getActivPaymentMethods()
+    {
+        $payments = Mage::getSingleton('payment/config')->getActiveMethods();
+
+        $methods = [];
+        foreach ($payments as $paymentCode => $paymentModel) {
+            $paymentTitle = Mage::getStoreConfig('payment/' . $paymentCode . '/title');
+            $methods[$paymentCode] = $paymentTitle;
+        }
+
+        return $methods;
+
     }
 }
