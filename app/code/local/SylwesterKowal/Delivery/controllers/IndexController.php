@@ -12,7 +12,6 @@ class SylwesterKowal_Delivery_IndexController extends Mage_Core_Controller_Front
     public function IndexAction()
     {
         $this->parseDataParcel($this->decode());
-
         if (!$this->isOrderExists()) {
             Mage::getSingleton('core/session')->addError('Order incorect!');
             return;
