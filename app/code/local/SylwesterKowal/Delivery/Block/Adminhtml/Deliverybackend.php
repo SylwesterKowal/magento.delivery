@@ -1,5 +1,0 @@
-<?php
-
-class SylwesterKowal_Delivery_Block_Adminhtml_Deliverybackend extends Mage_Adminhtml_Block_Template
-{
-}

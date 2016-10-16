@@ -1,6 +1,6 @@
 <?php
 
-class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_Adminhtml_Controller_Action
+class Sylwesterkowal_OrdersGrid_Adminhtml_DeliverybackendController extends Mage_Adminhtml_Controller_Action
 {
     protected $orderId;
     protected $host;
@@ -19,9 +19,10 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
     {
         $this->loadLayout();
         $this->_title($this->__("Delivery"));
+        $this->renderLayout();
 
         $this->orderId = $this->getRequest()->getParam('orderId');
-
+//
         if (!$this->isOrderExists()) {
             Mage::getSingleton('core/session')->addError('Order incorect!');
 
@@ -37,7 +38,6 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
         }
 
 //        $this->_redirect('adminhtml/sales_order/index');
-        return;
     }
 
     private function isOrderExists()
@@ -122,8 +122,7 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
         $data['ZI'] = $this->order->getShippingAddress()->getPostcode();
         $data['ST'] = $this->order->getShippingAddress()->getStreetFull();
         $data['TE'] = $this->order->getShippingAddress()->getTelephone();
-        $email = (!empty($this->order->getShippingAddress()->getEmail())) ? $this->order->getShippingAddress()->getEmail() : $this->order->getBillingAddress()->getEmail();
-        $data['EM'] = (!empty($email)) ? $email : $this->order->getCustomerEmail();
+        $data['EM'] = $this->order->getCustomerEmail();
         $orderItems = $this->getOrderItems();
         $data['IT'] = $orderItems['items'];
         $data['VA'] = (float)$this->order->getGrandTotal();
@@ -131,7 +130,7 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
         $data['PE'] = $this->order->getPayment()->getMethodInstance()->getCode(); // kod płatności z zamówienia
 
         $data['HO'] = $this->host;
-        $data['CD'] = Mage::getStoreConfig('deliverysection/settings/code');
+        $data['CD'] = crc32($this->host);
         $data['ME'] = $this->getActivPaymentMethods(); // lista aktywnych metod płatności
         return $data;
     }
@@ -168,7 +167,6 @@ class SylwesterKowal_Delivery_Adminhtml_DeliverybackendController extends Mage_A
             $paymentTitle = Mage::getStoreConfig('payment/' . $paymentCode . '/title');
             $methods[$paymentCode] = $paymentTitle;
         }
-
         return $methods;
 
     }

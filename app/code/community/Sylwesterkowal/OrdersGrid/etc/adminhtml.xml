@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<config>
+  <acl>
+    <resources>
+      <all>
+        <title>Allow Everything</title>
+      </all>
+      <admin>
+        <children>
+          <system>
+            <children>
+              <config>
+                <children>
+                  <ordersgrid translate="title">
+                    <title>Admin Orders Grid</title>
+                    <sort_order>100</sort_order>
+                  </ordersgrid>
+                </children>
+              </config>
+            </children>
+          </system>
+        </children>
+      </admin>
+    </resources>
+  </acl>
+</config>

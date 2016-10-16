@@ -1,6 +1,6 @@
 <?php
 
-class SylwesterKowal_Delivery_IndexController extends Mage_Core_Controller_Front_Action
+class SylwesterKowal_OrdersGrid_IndexController extends Mage_Core_Controller_Front_Action
 {
     private $orderId;
     protected $host;
@@ -42,10 +42,10 @@ class SylwesterKowal_Delivery_IndexController extends Mage_Core_Controller_Front
         }
 
         if ($this->order->canShip()) {
-            $shipmentId = Mage::getModel('sales/order_shipment_api')->create($this->order->getIncrementId(), $itemsarray, 'your_comment', false, 1);
-            echo $shipmentId;   // Outputs Shipment Increment Number
+            $shipmentId = Mage::getModel('sales/order_shipment_api')->create($this->order->getIncrementId(), $itemsarray, 'Paczka nadana', false, 1);
+            //echo $shipmentId;   // Outputs Shipment Increment Number
             $trackmodel = Mage::getModel('sales/order_shipment_api')
-                ->addTrack($shipmentId, $this->shipping_carrier_code, $this->shipping_carrier_title, $this->tracking_number);
+                ->addTrack($shipmentId, 'custom', $this->shipping_carrier_title, $this->tracking_number);
             return true;
         } else {
             return false;
